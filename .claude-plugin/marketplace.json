@@ -1,0 +1,14 @@
+{
+  "name": "claude-role-lanes",
+  "owner": {
+    "name": "Revelation Hosting",
+    "url": "https://github.com/Revelation-Hosting"
+  },
+  "plugins": [
+    {
+      "name": "lanes",
+      "source": "./plugins/lanes",
+      "description": "Guided setup of Discovery / Development / Release session roles and a work -> queue -> main -> prod branch flow."
+    }
+  ]
+}

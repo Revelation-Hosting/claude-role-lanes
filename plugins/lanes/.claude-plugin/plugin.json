@@ -1,0 +1,12 @@
+{
+  "name": "lanes",
+  "version": "0.1.0",
+  "description": "Guided setup of Discovery / Development / Release session roles and a work -> queue -> main -> prod branch flow for Claude Code projects.",
+  "author": {
+    "name": "Revelation Hosting"
+  },
+  "homepage": "https://github.com/Revelation-Hosting/claude-role-lanes",
+  "repository": "https://github.com/Revelation-Hosting/claude-role-lanes",
+  "license": "MIT",
+  "keywords": ["roles", "agents", "release", "milestones", "workflow"]
+}

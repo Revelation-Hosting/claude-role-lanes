@@ -1,0 +1,116 @@
+# claude-role-lanes configuration. Edit, then run /lanes:setup to re-render.
+# Reference: https://github.com/Revelation-Hosting/claude-role-lanes/blob/main/plugins/lanes/skills/setup/reference/config.md
+#
+# EXAMPLE: a small web app. Every push to main deploys prod. No database, no lower environments,
+# no runtime log access. All names are fictional.
+
+lanes_version: "0.1.0"
+
+project:
+  name: example-webapp
+  owner: the maintainers
+  summary: "A single-page booking app with a serverless API."
+
+style:
+  ste: false
+
+claude_md:
+  project_facts: true
+
+paths:
+  process_doc: docs/RELEASE-PROCESS.md
+  runbook_dir: docs/runbooks
+  runbook_file: VX.Y.Z-release-runbook.md
+
+tracker:
+  backlog_label: needs-milestone
+  scope_question_label: ""
+  severity_labels: true
+  bug_report_max_words: 300
+  risk_types:
+    - name: LEGAL/CONTRACTUAL
+      color: "B60205"
+      definition: We promise X in a contract, SLA, ToS or marketing and do not deliver it. Name the promise and cite where it is written.
+    - name: FINANCIAL
+      color: "D93F0B"
+      definition: Money moves wrong - overcharge, undercharge, missed charge, double charge, tax error. State what "should" is (the correct amount and its source).
+    - name: SECURITY/EXPLOIT
+      color: "5319E7"
+      definition: Unauthenticated endpoint, IDOR, injection, secret exposure, privilege escalation. Name the missing control and the worst action an attacker can take with it.
+    - name: RACE/STABILITY
+      color: "0E8A16"
+      definition: Concurrency bug, deadlock, crash, corruption under load. State the interleaving that triggers it.
+    - name: CUSTOMER HARM
+      color: "E99695"
+      definition: A customer's service, data, uptime or access is harmed. Name the customer asset at risk.
+    - name: COSMETIC/UX
+      color: "C5DEF5"
+      definition: None of the above. Add one sentence on why it still matters.
+
+roles:
+  model: inherit
+  effort: high
+  discovery:
+    may_edit: []
+    extra: ""
+  development:
+    extra: ""
+  release:
+    extra: ""
+
+coordination:
+  desktop_session_tools: false
+
+branches:
+  main: main
+  work: claude/<work>
+  queue: queue/vX.Y.Z
+  release: ""
+
+release:
+  topology: main
+  tag: ""
+  prod_deploy: The hosting provider builds and deploys every push to `main`. A PR gets a preview deployment.
+  record_name: "Production Release Record"
+  promote: "push"
+  prod_lanes: []
+  main_push_prod_paths: []
+
+environments:
+  prod: production
+  lower: []
+  lower_deploy: ""
+
+ci:
+  enabled: true
+  workflow: .github/workflows/test.yml
+  queue_prs: true
+  command: npm test
+  blocks_merge: true
+  count_floor: false
+
+database:
+  enabled: false
+
+observability:
+  enabled: false
+
+local_run:
+  enabled: true
+  command: npm run dev
+  allowed_envs: []
+  not_local: []
+
+browser:
+  enabled: true
+  tool: Playwright (`npx playwright test`)
+  sign_in: ""
+
+conventions:
+  - Every API handler validates its input with the shared schema in `src/api/schemas.ts`.
+
+hard_rules: []
+
+verification:
+  traps:
+    - A green preview deployment does not prove the production environment variables are set. Check the production build log.

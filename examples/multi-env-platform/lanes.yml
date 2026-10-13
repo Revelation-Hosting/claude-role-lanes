@@ -1,0 +1,171 @@
+# claude-role-lanes configuration. Edit, then run /lanes:setup to re-render.
+# Reference: https://github.com/Revelation-Hosting/claude-role-lanes/blob/main/plugins/lanes/skills/setup/reference/config.md
+#
+# EXAMPLE: a multi-service platform with four environments, a diverged release branch, a SQL database,
+# cloud log queries and a browser test tool. All names are fictional.
+
+lanes_version: "0.1.0"
+
+project:
+  name: example-platform
+  owner: the owner
+  summary: "A subscription hosting platform with a customer dashboard, a public storefront, an orchestration service and billing."
+
+style:
+  ste: true
+
+claude_md:
+  project_facts: true
+
+paths:
+  process_doc: docs/RELEASE-PROCESS.md
+  runbook_dir: docs/runbooks
+  runbook_file: VX.Y.Z-release-runbook.md
+
+tracker:
+  backlog_label: needs-milestone
+  scope_question_label: discovery-question
+  severity_labels: false
+  bug_report_max_words: 300
+  repro_inputs: "customer ID shape, plan, region"
+  population_examples: "customers in one region, customers on one plan"
+  risk_types:
+    - name: LEGAL/CONTRACTUAL
+      color: "B60205"
+      definition: We promise X in the ToS, SLA or marketing and do not deliver it. Name the promise and cite where it is written.
+    - name: FINANCIAL
+      color: "D93F0B"
+      definition: Money moves wrong - overcharge, undercharge, missed charge, double charge, tax error. State what "should" is (the correct amount and its source, such as a price-table row).
+    - name: SECURITY/EXPLOIT
+      color: "5319E7"
+      definition: Unauthenticated endpoint, IDOR, injection, secret exposure, privilege escalation. Name the missing control and the worst action an attacker can take with it.
+    - name: RACE/STABILITY
+      color: "0E8A16"
+      definition: Concurrency bug, deadlock, crash, corruption under load. State the interleaving that triggers it.
+    - name: HOSTED-SERVICE HARM
+      color: "E99695"
+      definition: A hosted customer's service is harmed - their data, uptime or access. Name the customer asset at risk (save file, queue entry, build artifact, region).
+    - name: DATA-INTEGRITY
+      color: "B60205"
+      definition: A stored row breaks an assumption a check depends on, so the check silently skips it.
+    - name: MONITORING-BLINDNESS
+      color: "FBCA04"
+      definition: A monitor reports healthy while the monitored thing is missing, dead or unmonitored.
+    - name: COSMETIC/UX
+      color: "C5DEF5"
+      definition: None of the above. Add one sentence on why it still matters.
+
+roles:
+  model: opus
+  effort: high
+  discovery:
+    may_edit:
+      - path: docs/billing-intent-map.md
+        why: The billing intent map states every billing decision as numbered rules. Discovery draws it from the code on main.
+    extra: |
+      - A billing milestone description cites the intent-map rule IDs it changes (for example `PUR-04`) and the rules it must not break.
+  development:
+    extra: |
+      - A change to a billing decision updates its intent-map rule and the flow's change log in the same PR.
+  release:
+    extra: ""
+
+coordination:
+  desktop_session_tools: true
+
+branches:
+  main: main
+  work: claude/<work>
+  queue: queue/vX.Y.Z
+  release: release/prod
+
+release:
+  topology: diverged-branch
+  tag: ""
+  prod_deploy: Dispatch each prod workflow with `gh workflow run <workflow> --ref release/prod`. Every prod workflow checks out `release/prod`.
+  record_name: "Production Cutover Record"
+  promote: "push"
+  prod_lanes:
+    - name: Dashboard
+      workflow: dashboard-cd-prod.yml
+      trigger: workflow_dispatch only
+      paths: "`src/Dashboard/**`, `src/Core/**`"
+    - name: Storefront
+      workflow: storefront-cd-prod.yml
+      trigger: workflow_dispatch only
+      paths: "`src/Storefront/**`, `src/Core/**`"
+    - name: Orchestration service
+      workflow: orchestration-cd-prod.yml
+      trigger: workflow_dispatch only
+      paths: "`src/Orchestration/**`, `src/Core/**`"
+  main_push_prod_paths:
+    - network/edge-proxy/**
+
+process:
+  extra: |
+    - **Configuration change on a deployed host.** After a live edit of a deployed settings file, read the service's own
+      effect line in the logs within 2 cycles. No effect line: restart the service. The absence of an error is not the
+      effect.
+
+environments:
+  prod: prod
+  lower: [dev, test, stage]
+  lower_deploy: CD on push to main, path-filtered; one run deploys dev, then test, then stage.
+
+ci:
+  enabled: true
+  workflow: .github/workflows/ci-tests.yml
+  queue_prs: true
+  command: dotnet test
+  blocks_merge: false
+  count_floor: true
+
+database:
+  enabled: true
+  engine: SQL Server
+  migrations_dir: db/migrations/
+  base_schema_dir: db/schema/
+  applied_by: "runbook"
+  apply: "`sqlcmd -i <file>`, run by Release, once per environment."
+  rules:
+    - Every migration is idempotent - it checks before it creates or alters.
+    - Every migration file is pure ASCII. Write special characters in data as NCHAR(n).
+    - Every migration opens with `SET QUOTED_IDENTIFIER ON;`.
+
+observability:
+  enabled: true
+  tool: Azure Application Insights
+  query: az monitor app-insights query --app <AppId> --analytics-query "<QUERY>" --offset 7d
+  control: az monitor app-insights query --app <AppId> --analytics-query "union traces, requests | summarize n=count()" --offset 90d
+  notes:
+    - Components named `legacy-*` are retired. They answer every query with 0 rows and no error.
+    - "`has` is token-based: `message has 'http'` does not match `https://`. Use `contains`."
+    - "List the App IDs: `az monitor app-insights component show --resource-group <group> --query \"[].{Name:name,AppId:appId}\" -o tsv`."
+
+local_run:
+  enabled: true
+  command: dotnet run --project src/Dashboard
+  allowed_envs: [dev, test]
+  not_local:
+    - Orchestration service - drives remote shells on customer hosts. Verify after promotion in dev, or through Application Insights.
+
+browser:
+  enabled: true
+  tool: Playwright MCP (mcp__playwright__*)
+  sign_in: Mint a session cookie with the project's auth-cookie tool and inject it.
+
+conventions:
+  - The Dashboard API serializes JSON in PascalCase; the Storefront API in camelCase. Read the C# DTO before writing JavaScript that reads a response.
+  - The UI uses Bootstrap 4. Bootstrap 5 classes (`visually-hidden`, `ms-*`, `form-select`) silently do nothing.
+  - Every sortable table column of money, numbers or dates carries an explicit `data-order`.
+
+hard_rules:
+  - title: Money moves only through the payment service
+    rule: Every charge, capture, refund or subscription create goes through `PaymentService`. No other code calls the payment provider's money-moving API.
+    enforcement: A CI test fails any other caller of a money-moving provider API. Its allow-list names each unconverted site with its issue, and only shrinks.
+    why: Separate call sites each grew their own guard, and the guards disagreed. One choke point replaced them.
+
+verification:
+  traps:
+    - The telemetry collector jobs swallow exceptions. A run with no error log proves nothing; check the written row.
+    - A provisioning gate asserts the provisioned service answers its port, not that the job reached 100%.
