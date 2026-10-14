@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1 - unreleased
+
+- CI module: new CLAUDE.md subsection "Waiting for a CI run: background `gh run watch`". A green run sends a Claude
+  Code session no notification, and the desktop app's built-in instructions forbid polling CI. Without a project rule,
+  a session that waits for green is never woken. The rule names `gh run watch <run-id> --compact --exit-status` as a
+  background Bash command, bans Monitor poll loops, and states the override. Development's merge-on-green line and
+  Release's run checks point to it.
+
 ## 0.1.0 - unreleased
 
 First public version.

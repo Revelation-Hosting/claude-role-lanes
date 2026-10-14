@@ -157,6 +157,8 @@ need the deploy before you promote, and verify prod directly after the push.
 {{#if ci.queue_prs}}
 - `{{ci.workflow}}` is green on the head SHA of every PR merged into the queue branch, and on the queue branch tip if
   the workflow runs there. Read each run (`gh run list --workflow {{ci.workflow}}`); do not infer green from silence.
+  To wait for a run that is still going (the promotion PR, the push to `{{branches.main}}`, a deploy), use a background
+  `gh run watch` (CLAUDE.md, "Waiting for a CI run").
 {{else}}
 - Every PR merged into the queue branch carries Development's pasted local test result. CI first runs on this work
   in the promotion PR: read that run; do not infer green from silence.

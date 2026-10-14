@@ -1,6 +1,6 @@
 {
   "name": "lanes",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Guided setup of Discovery / Development / Release session roles and a work -> queue -> main -> prod branch flow for Claude Code projects.",
   "author": {
     "name": "Revelation Hosting"
