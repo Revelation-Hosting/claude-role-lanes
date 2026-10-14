@@ -108,7 +108,8 @@ specified, a migration that cannot work as written), stop and escalate to Discov
 {{#if ci.enabled}}
 {{#if ci.queue_prs}}
   Merge when CI (`{{ci.workflow}}`) is green on the PR's head SHA.{{#unless ci.blocks_merge}} CI does not block merge on
-  this repo, so reading it is your job.{{/unless}}
+  this repo, so reading it is your job.{{/unless}} Wait for the run with a background `gh run watch` (CLAUDE.md,
+  "Waiting for a CI run"). A green run sends no notification.
 {{else}}
   CI (`{{ci.workflow}}`) does not run on PRs into queue branches. Run `{{ci.command}}` on the PR head, paste the
   summary line into the PR, and merge only when it passes.
