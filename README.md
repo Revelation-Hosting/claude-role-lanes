@@ -25,13 +25,15 @@ The lanes answer with **separation of roles** and **one branch flow** in which t
 | **Development** | One milestone or hotfix: code, tests, runbook steps | yes | no | its PR merged into the queue branch |
 | **Release** | Promotion, verification, prod, the cutover record | **no** | no (closes shipped ones) | prod, verified |
 
-**The three hard rules** (in `CLAUDE.md`, so they bind every session, Default included):
+**The four hard rules** (in `CLAUDE.md`, so they bind every session, Default included):
 
 1. **Anyone files issues. Only Discovery assigns milestones**, after reading the whole board.
 2. **File forward, never sideways.** A bug outside your milestone gets a new issue with no milestone and a backlog
    label. A missed site of your milestone's *own* defect is in scope: fix it.
 3. **Read the board before any milestone decision**: who else is working, what they decided, the milestone's
    IN SCOPE / OUT OF SCOPE / BELONGS ELSEWHERE.
+4. **No issue closes before its fix takes effect.** No closing keyword in a commit message, a PR title or a PR body.
+   Release closes each issue when its fix takes effect: at the promotion, or after the prod checks.
 
 **The lanes:**
 

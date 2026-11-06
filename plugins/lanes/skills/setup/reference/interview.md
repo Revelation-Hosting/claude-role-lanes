@@ -57,10 +57,6 @@ candidate. Propose its `paths:` filter.
 Before Round 1, ask one question:
 
 - **Guided (Recommended)** - all 7 rounds. Most answers are pre-filled confirmations.
-
-In Round 4, also propose risk types that fit the product's domain, not only the catalogue (for example `LIFE-SAFETY`
-for an emergency-response product, `LOCATION-PRIVACY` for one that stores where vulnerable people are). Mark them
-"(proposed)" and give each a definition in the config.md style.
 - **Minimal** - Rounds 1, 2 and 3 only. Every optional module is written as `enabled: false`. The user turns one on
   later by editing `.claude/lanes.yml` and running `/lanes:setup` again.
 
@@ -89,7 +85,7 @@ asked in chat.
 
 | Key | Question |
 |---|---|
-| `release.topology` | "How does code reach prod?" Options: the four values, with the proposed one first, marked Recommended, and its evidence in the description. Descriptions: `diverged-branch` - "a release branch advanced by merging main into it"; `ff-branch` - "a release branch fast-forwarded to a commit on main"; `tag` - "a version tag on main deploys"; `main` - "every push to main deploys". |
+| `release.topology` | "How does code reach prod?" config.md allows 5 values, and a question takes at most 4 options, so ask in up to 2 steps. **Step 1** options: `main` - "every push to main deploys"; `tag` - "a version tag on main deploys"; `dispatch` - "a manual workflow dispatch deploys main's tip"; "A release branch" - "prod deploys a branch other than main". **Step 2**, only after "A release branch": `diverged-branch` - "a release branch advanced by merging main into it"; `ff-branch` - "a release branch fast-forwarded to a commit on main". In each step, the option that holds the proposed value goes first, marked Recommended, with its evidence in the description. With no proposal, keep this order and mark no option Recommended. |
 | `branches.main` | Confirm the detected default branch. |
 | `branches.queue` | "Queue-branch pattern, one per milestone?" Default `queue/vX.Y.Z`. |
 | `branches.work` | "Work-branch pattern?" Default `claude/<work>`. |
@@ -121,6 +117,10 @@ asked in chat.
 | `tracker.severity_labels` | "Create labels S1-S4?" Default No. |
 | `tracker.repro_inputs`, `tracker.population_examples` | In chat, optional: "Which inputs must every reproduction state (for example: tenant ID shape, plan, region)? Which customer segments do you count by (for example: tenants in one region)?" |
 | `tracker.bug_report_max_words` | Not asked. Default 300. |
+
+Also propose risk types that fit the product's domain, not only the catalogue (for example `LIFE-SAFETY` for an
+emergency-response product, `LOCATION-PRIVACY` for one that stores where vulnerable people are). Mark them
+"(proposed)" and give each a definition in the config.md style.
 
 ## Round 5 - Verification
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.3 - unreleased
+
+The setup skill now matches `config.md` and `plugin.json`.
+
+- Interview: the `release.topology` question offers all 5 values (issue #3). It listed 4 and left out `dispatch`,
+  which the topology inference could still propose. `AskUserQuestion` takes at most 4 options, so the question now
+  has 2 steps: `main`, `tag`, `dispatch` or "A release branch", then `diverged-branch` or `ff-branch`.
+- Interview: the Round 4 risk-type paragraph moves out of the Pace option list and into Round 4 (issue #4).
+- Labels: `config.md` > "Tracker labels" gives the backlog label, the scope-question label and `S1`..`S4` a color and a
+  description. Step 8 reads them and no longer invents them. An existing label keeps its own color and description
+  (issue #5).
+- CHECK mode reports the plugin version that Step 0.4 reads from `plugin.json`, not the literal "0.4" (issue #7).
+- `SKILL.md`, `config.md` and `README.md` count 4 core hard rules, not 3, and the README lists rule 4 (issue #10).
+  0.1.2 added rule 4 to the CLAUDE.md block and did not update these 3 counts.
+
 ## 0.1.2 - unreleased
 
 - No issue closes before its fix takes effect (issue #2). GitHub closes an issue when a closing keyword reaches the

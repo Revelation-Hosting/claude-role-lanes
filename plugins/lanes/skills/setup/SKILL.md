@@ -14,7 +14,7 @@ opened without the skill loader (the path in `SETUP.md` at the root of the claud
 SKILL_DIR is the directory that contains this file.
 
 You install the role lanes into a git repository, the **TARGET**. The lanes are four session roles (Default,
-Discovery, Development, Release), three hard rules, and a branch flow `work -> queue -> main -> prod`. Read
+Discovery, Development, Release), four hard rules, and a branch flow `work -> queue -> main -> prod`. Read
 `SKILL_DIR/reference/config.md`, `SKILL_DIR/reference/interview.md` and `SKILL_DIR/reference/rendering.md` before
 Step 1.
 
@@ -124,7 +124,7 @@ until they merge.
 
 Render every template in the Step 6 table in memory, by `reference/rendering.md`. Run the self-check for each file.
 
-**CHECK mode stops here.** First report the plugin version (0.4) beside `lanes_version`. If the plugin is newer,
+**CHECK mode stops here.** First report the plugin version (Step 0.4) beside `lanes_version`. If the plugin is newer,
 recommend a normal run to upgrade. Then, for each target, compare the render with what is on disk (for `CLAUDE.md`,
 the block from the `lanes:begin` line through the `lanes:end` line, both included). Report, per file: `in sync`, `differs` (with the changed lines), `absent`, or `owned` (not
 compared). For an owned file with a side-by-side file in `.claude/lanes-new/`, also report whether the side-by-side
@@ -189,11 +189,15 @@ Resolve every `FAIL` (corrected, or `ACCEPTED`) before Step 8 and Step 9.
 
 Skip this step if GitHub is not available (Step 0.2). Otherwise:
 
-1. Build the label list: `tracker.backlog_label`; `tracker.scope_question_label` if set; one label per
-   `tracker.risk_types` item (name = `name`, color = `color`, description = the first sentence of `definition`, cut
-   to 100 characters); `S1`..`S4` if `tracker.severity_labels`.
+1. Build the label list. Each label has a name, a color and a description.
+   - **Tracker labels:** `tracker.backlog_label`; `tracker.scope_question_label` if set; `S1`..`S4` if
+     `tracker.severity_labels`. The name comes from the config. The color and the description come from
+     `reference/config.md` > "Tracker labels". Never invent them.
+   - **Risk-type labels:** one per `tracker.risk_types` item (name = `name`, color = `color`, description = the
+     first sentence of `definition`, cut to 100 characters).
 2. Compare it with `gh label list --limit 200 --json name,color,description`. Show a table: label, `create` /
-   `update` (with the change) / `unchanged`.
+   `update` (with the change) / `unchanged`. A tracker label that already exists is `unchanged`: it keeps its own
+   color and description.
 3. Ask: "Create or update these labels on <owner/repo>?" Only on a clear yes, run
    `gh label create "<name>" --color <hex> --description "<text>" --force` for each `create` or `update` row.
 4. Run `gh label list` again and confirm each label exists with its color.
