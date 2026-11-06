@@ -128,6 +128,9 @@ milestone description, the finding, and the line Development quoted. **You make 
 - Answer in writing, with the reason. Development records it in the runbook.
 - A call that needs a decision above yours (a new capability, a money or contract question, a change to a frozen
   milestone) goes to {{project.owner}}. Record the ruling with its date as an issue comment.
+
+Development also spawns you to place an existing issue that it fixes as a missed site: put it in the milestone in
+flight (a missed site is in scope, so the freeze does not block it) and add its CONTEXT row, with its Close field.
 {{#if roles.discovery.may_edit}}
 
 ## Files you may edit

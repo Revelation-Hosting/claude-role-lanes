@@ -18,6 +18,9 @@
   release" closes the remaining issues before the milestone.
 - Runbook template: the STEP 1 keyword scan, and a Close field per issue: "Closes at merge" or "Refs, closed by
   Release after gates".
+- An existing issue fixed as a missed site now gets a close moment (issue #8). Development spawns Discovery to place
+  it in the milestone in flight, so Gate 1, the Close field and "After a prod release" cover it. In 0.1.1 such an
+  issue never closed. `discovery.md` gets one line for that placement.
 - CLAUDE.md block: hard rule 4, which binds Default and Discovery sessions too. Release process document: "When an
   issue closes".
 - One scan regex in every file, in portable POSIX ERE form: `(^|[^A-Za-z])` instead of `\b`. UNVERIFIED: `\b` in BSD
