@@ -65,6 +65,18 @@ GitHub issues and milestones only in this version.
 | `tracker.population_examples` | string | no | - | A phrase naming this project's customer segments. Example: `tenants in one region, tenants of one game title`. |
 | `tracker.risk_types` | list | yes | the 6 core types | One GitHub label per type, named exactly `name`. Each item: `name`, `color` (6 hex digits, no `#`), `definition` (one or two sentences; what the report must name). |
 
+**Tracker labels.** The config sets only the name of each of these labels. Setup creates a missing one with this color
+and description (Step 8). A label of that name that already exists keeps its own color and description.
+
+| Label | Created when | color | description |
+|---|---|---|---|
+| `tracker.backlog_label` | always | `0E8A16` | No milestone yet. Discovery places it in a release and removes this label. |
+| `tracker.scope_question_label` | the value is not empty | `D93F0B` | Open scope question for Discovery. Discovery removes this label after it answers. |
+| `S1` | `tracker.severity_labels` is `true` | `B60205` | Critical: money wrong, data loss or corruption, active breach, or a wide outage. |
+| `S2` | `tracker.severity_labels` is `true` | `D93F0B` | High: a large subset affected, real legal or financial exposure, painful workaround. |
+| `S3` | `tracker.severity_labels` is `true` | `FBCA04` | Medium: limited blast radius, clear workaround, no direct money or security impact. |
+| `S4` | `tracker.severity_labels` is `true` | `C5DEF5` | Low: cosmetic, single user, trivial workaround. |
+
 **Core risk types** (setup proposes all 6):
 
 | name | color | definition |
