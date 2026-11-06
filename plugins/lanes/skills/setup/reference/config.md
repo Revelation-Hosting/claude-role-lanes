@@ -220,6 +220,6 @@ and description (Step 8). A label of that name that already exists keeps its own
 | Key | Type | Req | Default | Meaning |
 |---|---|---|---|---|
 | `conventions` | list of strings | no | `[]` | The project conventions that cause the most rework when missed. One line each. Rendered into CLAUDE.md and the Development role. |
-| `hard_rules` | list | no | `[]` | Project hard rules, added after the 3 core hard rules. Each item: `title`, `rule`, `enforcement` (what fails when it is broken; may be empty), `why` (the measured cost that produced the rule). |
+| `hard_rules` | list | no | `[]` | Project hard rules, added after the 4 core hard rules. Each item: `title`, `rule`, `enforcement` (what fails when it is broken; may be empty), `why` (the measured cost that produced the rule). |
 | `verification.traps` | list of strings | no | `[]` | Project-specific ways a check passes while the system is broken. One line each. Rendered into the verification standard. |
 | `verification.accepted` | list | no | `[]` | Config values the user confirmed after setup's read-through (V7) flagged them. Each item: `key`, `reason`. V7 does not flag a listed key again while its value is unchanged. |

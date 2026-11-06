@@ -14,7 +14,7 @@ opened without the skill loader (the path in `SETUP.md` at the root of the claud
 SKILL_DIR is the directory that contains this file.
 
 You install the role lanes into a git repository, the **TARGET**. The lanes are four session roles (Default,
-Discovery, Development, Release), three hard rules, and a branch flow `work -> queue -> main -> prod`. Read
+Discovery, Development, Release), four hard rules, and a branch flow `work -> queue -> main -> prod`. Read
 `SKILL_DIR/reference/config.md`, `SKILL_DIR/reference/interview.md` and `SKILL_DIR/reference/rendering.md` before
 Step 1.
 

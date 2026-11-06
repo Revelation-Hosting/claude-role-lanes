@@ -12,6 +12,8 @@ The setup skill now matches `config.md` and `plugin.json`.
   description. Step 8 reads them and no longer invents them. An existing label keeps its own color and description
   (issue #5).
 - CHECK mode reports the plugin version that Step 0.4 reads from `plugin.json`, not the literal "0.4" (issue #7).
+- `SKILL.md`, `config.md` and `README.md` count 4 core hard rules, not 3, and the README lists rule 4 (issue #10).
+  0.1.2 added rule 4 to the CLAUDE.md block and did not update these 3 counts.
 
 ## 0.1.2 - unreleased
 
