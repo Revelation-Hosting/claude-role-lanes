@@ -22,9 +22,20 @@
 
 *(Discovery.)* What is wrong, with evidence. One row per issue.
 
-| Issue | What was wrong | Severity |
-|---|---|---|
-| #<TODO: n> | <TODO: the defect, with the log line, row or measurement that shows it> | <TODO: S1-S4> |
+**Close** says when the issue closes. No issue closes before its fix takes effect.
+{{#if (eq release.topology "main")}}
+In this project the promotion is the prod deploy, so every issue is "Closes at merge": its promotion line is
+`Closes #NNN`.
+{{else}}
+"Closes at merge" is only for a docs/process-only fix (it changes no file that a deploy ships or runs): its promotion
+line is `Closes #NNN`. Every other issue is "Refs, closed by Release after gates": its promotion line is `Refs #NNN`,
+and Release closes it after its Gate 2 and prod checks. Discovery drafts the field. Development corrects it if the
+build changes what the fix touches.
+{{/if}}
+
+| Issue | What was wrong | Severity | Close |
+|---|---|---|---|
+| #<TODO: n> | <TODO: the defect, with the log line, row or measurement that shows it> | <TODO: S1-S4> | {{#if (eq release.topology "main")}}Closes at merge{{else}}<TODO: Closes at merge / Refs, closed by Release after gates>{{/if}} |
 
 ## WHAT SHIPS
 
@@ -37,7 +48,8 @@
 ## DEVIATIONS
 
 *(Development.)* Every place the build departs from the milestone description, and every missed site fixed in place.
-Quote the contract line. Record Discovery's ruling where one was needed. Write "None." if there are none.
+Quote the contract line. Record Discovery's ruling where one was needed. Release adds each STEP 1 keyword-scan hit.
+Write "None." if there are none.
 
 | # | Deviation | Contract line | Status |
 |---|---|---|---|
@@ -61,11 +73,22 @@ Quote the contract line. Record Discovery's ruling where one was needed. Write "
 
 1. `git log --oneline origin/{{branches.main}}..origin/<queue branch>` lists only this milestone's commits.
 2. The queue branch contains current `{{branches.main}}`.
+3. **Keyword scan** *(Release, before the promotion)*. It prints each commit message line in the promotion that
+   carries a closing keyword, prefixed with the commit SHA:
+
+   ```bash
+   git fetch origin
+   git rev-list origin/{{branches.main}}..origin/<queue branch> | while read -r c; do git log -1 --format=%B "$c" | grep -inE '(^|[^A-Za-z])(close[sd]?|fix(e[sd])?|resolve[sd]?)[[:space:]:]+([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+' | sed "s/^/$c:/"; done
+   ```
+
+   Result: <TODO: "Clean", or each hit: commit SHA and issue number>. A hit does not block the promotion. Record each
+   hit in DEVIATIONS. Directly after the promotion, re-open each issue a hit closed before its fix takes effect, with a
+   comment that names the commit. Release closes it after its gates (release.md, "When an issue closes").
 {{#if ci.enabled}}
 {{#if ci.queue_prs}}
-3. `{{ci.workflow}}` is green on the head SHA of every PR merged into the queue branch. Run IDs: <TODO: ids>.
+4. `{{ci.workflow}}` is green on the head SHA of every PR merged into the queue branch. Run IDs: <TODO: ids>.
 {{else}}
-3. Every PR merged into the queue branch carries a pasted local `{{ci.command}}` result. PRs: <TODO: numbers>.
+4. Every PR merged into the queue branch carries a pasted local `{{ci.command}}` result. PRs: <TODO: numbers>.
 {{/if}}
 {{/if}}
 
@@ -125,6 +148,11 @@ A gate observes an effect. "No errors appeared" is not an observation.
 ## STEP 5 - PROD
 
 *(Release.)* <TODO: the exact prod sequence for this release, in order.>
+{{#unless (eq release.topology "main")}}
+
+Last: close each issue whose Close field is "Refs, closed by Release after gates", and each issue re-opened after a
+STEP 1 hit, once its Gate 2 and prod checks pass (release.md, "After a prod release").
+{{/unless}}
 
 ## STEP 6 - ROLLBACK
 

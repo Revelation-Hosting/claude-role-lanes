@@ -56,7 +56,7 @@ test.
 
 | Result | Action |
 |---|---|
-| **Clear match.** The finding is this milestone's own defect, at a site the IN SCOPE list or the gate did not name. | **Fix it in this milestone.** List it in the runbook's deviations, with the quoted line. If an issue already exists, name it in the PR (no closing keyword) and comment "Fixed in `<queue branch>` by PR #N" on it. File no new issue. |
+| **Clear match.** The finding is this milestone's own defect, at a site the IN SCOPE list or the gate did not name. | **Fix it in this milestone.** List it in the runbook's deviations, with the quoted line. If an issue already exists and is not on this milestone, spawn a Discovery agent (`subagent_type: discovery`) to place it there. Give it the issue, the finding and the quoted line. You cannot assign milestones (CLAUDE.md hard rule 1). The issue is then a milestone issue, like the others: name it in the PR with `Refs #NNN`, never a closing keyword, and comment "Fixed in `<queue branch>` by PR #N" on it at the queue merge. File no new issue. |
 | **Close, not obvious.** A careful reader could go either way. | **Spawn a Discovery agent** (`subagent_type: discovery`). Give it the milestone description, the finding and the quoted line. Discovery makes the call: fix here, or file forward. Record the call and its reason in the runbook. Do not decide it yourself in either direction.{{#if tracker.scope_question_label}} If the ruling must wait for {{project.owner}}, comment the question on the issue, add the label `{{tracker.scope_question_label}}`, and do not act on that finding until it is answered.{{/if}} |
 | **No match.** A new capability, new schema, another defect class, or a surface the contract does not reach. | **File it forward:** NO milestone, label `{{tracker.backlog_label}}`. Let Discovery place it. Do **not** add it to your milestone or to any other. |
 
@@ -117,10 +117,26 @@ specified, a migration that cannot work as written), stop and escalate to Discov
 {{/if}}
   - Use a **merge commit** (`gh pr merge <n> --merge`), never squash. A squash folds commits that must be revertible
     alone into one.
-  - Put **no closing keywords** in the PR to the queue. GitHub fires them only on merges into the default branch. The
-    `Closes #NNN` lines belong in Release's queue -> `{{branches.main}}` promotion.
+  - Put **no closing keyword** in any commit message, PR title or PR body. The keywords are `close`, `closes`,
+    `closed`, `fix`, `fixes`, `fixed`, `resolve`, `resolves` and `resolved`, followed by `#N` or `owner/repo#N`.
+    GitHub closes the issue when that text reaches `{{branches.main}}`. Your commits, your merge commit (its body
+    carries the PR title, or the PR body) and the PR text all reach it at Release's promotion.{{#unless (eq release.topology "main")}}
+    In this project the promotion is not the prod deploy, so that close comes before most fixes take effect.{{/unless}}
+    Name an issue with `Refs #NNN`. When each issue closes is Release's call.
+  - **Before the merge, run both keyword scans.** Each one prints nothing:
+
+    ```bash
+    git log --format=%B origin/{{branches.main}}..HEAD | grep -inE '(^|[^A-Za-z])(close[sd]?|fix(e[sd])?|resolve[sd]?)[[:space:]:]+([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+'
+    gh pr view <n> --json title,body --jq '.title, .body' | grep -inE '(^|[^A-Za-z])(close[sd]?|fix(e[sd])?|resolve[sd]?)[[:space:]:]+([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+'
+    ```
+
+    A hit in a commit message: reword the commit and force-push your branch. It is not merged yet. A hit in the title
+    or body: fix it with `gh pr edit <n>`. Then run both scans again.
   - After the merge, **assert it**: `git log --oneline origin/{{branches.main}}..origin/<queue branch>` returns your
     commits, and `git rev-parse origin/<queue branch>^{tree}` equals your branch's tree.
+  - Then comment on **each milestone issue the PR fixed**:
+    `gh issue comment <issue> --body "Fixed in <queue branch> by PR #N"`. The issue stays open. Release's Gate 1 reads
+    this comment, and Release closes the issue when the fix takes effect.
   - **Stop pushing to the merged branch.** A later fix goes on a new branch and a new PR into the same queue.
 - **The queue merge ends your job.** Queue -> `{{branches.main}}` and everything after it are **Release's, and only
   Release's**. Never merge, push or open a PR into `{{branches.main}}`{{#if (eq release.topology "diverged-branch")}} or

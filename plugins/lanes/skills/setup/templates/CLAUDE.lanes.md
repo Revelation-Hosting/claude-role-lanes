@@ -89,6 +89,15 @@ get broken, and a link does not get read by a session that does not know it is a
    IN SCOPE / OUT OF SCOPE / BELONGS ELSEWHERE.
 {{/if}}
 
+4. **No issue closes before its fix takes effect.** Write no closing keyword in a commit message, a PR title or a PR
+   body. A closing keyword is `close`, `fix` or `resolve` in any form, followed by `#N` or `owner/repo#N`. GitHub
+   closes the issue when that text reaches `{{branches.main}}`, in any commit or in a merged PR's body.{{#unless (eq release.topology "main")}}
+   In this project that is the promotion, and prod deploys after it.{{/unless}} Name an issue with `Refs #NNN`. Only
+   Release writes `Closes #NNN`, and only where the fix takes effect at that merge. Before you push or open a PR,
+   this prints nothing:
+   `git log --format=%B origin/{{branches.main}}..HEAD | grep -inE '(^|[^A-Za-z])(close[sd]?|fix(e[sd])?|resolve[sd]?)[[:space:]:]+([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+'`
+   Run the same `grep` on the PR title and body.
+
 **Why these rules exist.** When several sessions work in parallel, each can decide, correctly from what it can see,
 that its find belongs in the release in flight. Together they turn a small release into a large one that nobody
 planned. Nobody is careless: the decision is global, and each session makes it from local information.

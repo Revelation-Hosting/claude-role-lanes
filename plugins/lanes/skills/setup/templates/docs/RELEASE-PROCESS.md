@@ -210,6 +210,19 @@ thematically similar. **Category is not coupling.** Two things that share a dire
 - **After any promotion to `{{branches.main}}`, merge `{{branches.main}}` into every open queue branch.** Skipped, this
   drifts silently.
 
+### When an issue closes
+
+**No issue closes before its fix takes effect.** GitHub closes an issue when a closing keyword (`close`, `fix` or
+`resolve` in any form, followed by `#N` or `owner/repo#N`) reaches `{{branches.main}}`: in any commit message, in a
+merge commit's body (it carries the PR title), or in a merged PR's body. So Development writes none in a commit
+message, a PR title or a PR body, and its pre-merge scans check it. At the queue merge, Development comments
+`Fixed in <queue branch> by PR #N` on each issue. That comment, not a closed issue, is what Release's Gate 1 reads.
+Release alone decides when each issue closes.{{#if (eq release.topology "main")}} Here the promotion is the prod
+deploy, so the promotion carries `Closes #NNN` for each milestone issue.{{else}} Here prod deploys after the
+promotion. The promotion carries `Closes #NNN` only for a docs/process-only fix, and `Refs #NNN` for every other
+issue. Release closes each `Refs` issue after Gate 2 and the prod checks, before it closes the milestone.{{/if}}
+Release's STEP 1 scan catches a keyword that got through, and Release re-opens any issue that keyword closed too early.
+
 ---
 
 ## Milestone descriptions carry their own boundary
