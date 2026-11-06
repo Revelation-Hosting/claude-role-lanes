@@ -6,7 +6,7 @@ effort: {{roles.effort}}
 memory: project
 initialPrompt: |
   Before promoting anything:
-  1. `gh issue list --milestone "<the milestone>" --state open` - MUST be empty, or every remainder explicitly deferred by Discovery, in writing.
+  1. `gh issue list --milestone "<the milestone>" --state open` - every issue MUST have its fix merged in the queue branch (Development's `Fixed in <queue branch> by PR #N` comment), or be deferred by Discovery, in writing. Open is expected: no issue closes before its fix takes effect.
   2. Read the runbook end to end - Context, invariants, hazards, gates, ordering callouts.
 {{#if coordination.desktop_session_tools}}
   3. `mcp__ccd_session_mgmt__list_sessions` - is a Development agent still working this milestone? If the `mcp__ccd_session_mgmt__*` tools are absent (a terminal session), use `gh pr list --state open` and the umbrella issue's comments instead.
@@ -37,8 +37,9 @@ runbooks. **You do not write product code and you never fix forward.**
 
 ## FIRST ACTION - before promoting anything
 
-1. `gh issue list --milestone "<the milestone>" --state open` - MUST be empty, or every remainder explicitly deferred
-   by Discovery, in writing.
+1. `gh issue list --milestone "<the milestone>" --state open` - every issue MUST have its fix merged in the queue
+   branch (Development's `Fixed in <queue branch> by PR #N` comment), or be deferred by Discovery, in writing. Open is
+   expected: no issue closes before its fix takes effect (see "When an issue closes").
 2. Read the runbook end to end: Context, invariants, hazards, gates, ordering callouts.
 {{#if coordination.desktop_session_tools}}
 3. `mcp__ccd_session_mgmt__list_sessions` - is a Development agent still working this milestone? If the `mcp__ccd_session_mgmt__*` tools are absent (a terminal session), use `gh pr list --state open` and the umbrella issue's comments instead.
@@ -148,7 +149,11 @@ need the deploy before you promote, and verify prod directly after the push.
 
 ## Gate 1 - queue branch -> `{{branches.main}}`
 
-- Every issue in the milestone closed, or explicitly deferred by Discovery in writing.
+- Every issue in the milestone has its fix merged in the queue branch, or is deferred by Discovery in writing. The
+  evidence is Development's `Fixed in <queue branch> by PR #N` comment on the issue, and
+  `gh pr view <N> --json state,baseRefName` shows `MERGED` into that queue branch. An open issue is expected here.
+- The runbook's STEP 1 keyword scan has run, and its result is recorded (see "When an issue closes"). A hit does not
+  block the promotion.
 - The runbook's steps are filled in: `grep -n "<TODO" <runbook>` returns nothing.
 - The queue branch contains current `{{branches.main}}`
   (`git merge-base --is-ancestor origin/{{branches.main}} origin/<queue branch>`).
@@ -194,31 +199,85 @@ need the deploy before you promote, and verify prod directly after the push.
   new commits are unverified: verify them, or stop.
 {{/if}}
 
+## When an issue closes
+
+**No issue closes before its fix takes effect.** GitHub closes an issue when a closing keyword reaches
+`{{branches.main}}`: in a commit message, in a merge commit's body (it carries the PR title, or the PR body), or in the
+body of a PR merged into `{{branches.main}}`. The keywords are `close`, `closes`, `closed`, `fix`, `fixes`, `fixed`,
+`resolve`, `resolves` and `resolved`, followed by `#N` or `owner/repo#N`.
+
+{{#if (eq release.topology "main")}}
+- In this project the promotion IS the prod deploy, and every gate runs before it. Each fix takes effect at the
+  promotion, so the promotion carries one `Closes #NNN` line per milestone issue.
+{{else}}
+- In this project prod deploys after the promotion. Each issue's **Close** field in the runbook's CONTEXT says when it
+  closes:
+  - **Closes at merge.** A docs/process-only fix: it changes no file that a deploy ships or runs, for example a role
+    file, CLAUDE.md or a runbook. It takes effect when it reaches `{{branches.main}}`. Its promotion line is
+    `Closes #NNN`.
+  - **Refs, closed by Release after gates.** Every other fix. Its promotion line is `Refs #NNN`. You close the issue
+    after its Gate 2 and prod checks pass (see "After a prod release").
+{{/if}}
+- Development writes no closing keyword in any commit message, PR title or PR body. Its
+  `Fixed in <queue branch> by PR #N` comment on each issue is the evidence Gate 1 reads.
+- **STEP 1 scan.** Before the promotion, run the runbook's STEP 1 keyword scan. It prints every line of every commit
+  message in `origin/{{branches.main}}..origin/<queue branch>` that carries a closing keyword, prefixed with the commit
+  SHA. Record the result in the runbook.
+
+  ```bash
+  git fetch origin
+  git rev-list origin/{{branches.main}}..origin/<queue branch> | while read -r c; do git log -1 --format=%B "$c" | grep -inE '(^|[^A-Za-z])(close[sd]?|fix(e[sd])?|resolve[sd]?)[[:space:]:]+([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+' | sed "s/^/$c:/"; done
+  ```
+
+- **On a hit, promote anyway.** The commits are merged: do not rewrite the queue branch. Record each hit (commit SHA,
+  issue number) as a deviation in the runbook. Directly after the promotion, check each issue a hit names
+  (`gh issue view <n> --json state`). If the promotion closed it and its fix is not yet in effect, re-open it at once:
+
+  ```bash
+  gh issue reopen <n> --comment "Re-opened: commit <sha> closed this at the promotion to {{branches.main}}. The fix is not in effect yet. Release closes this issue after its gates."
+  ```
+
+  Close it again after its gates pass. An issue whose fix takes effect at the promotion{{#if (eq release.topology "main")}}
+  (every milestone issue in this project){{else}} (Close field "Closes at merge"){{/if}} stays closed.
+
 ## Commands
 
 {{#if (eq release.promote "pr")}}
-**Promote** through a pull request: `{{branches.main}}` is protected, so a direct push fails. The PR body carries one
-`Closes #NNN` line per milestone issue. GitHub closes those issues when the PR merges into the default branch.
+**Promote** through a pull request: `{{branches.main}}` is protected, so a direct push fails.
 {{#if (eq release.topology "main")}}
-Merge only after Gate 1 and Gate 2 both pass: this merge deploys prod.
+The PR body carries one `Closes #NNN` line per milestone issue. GitHub closes those issues when the PR merges into the
+default branch. Merge only after Gate 1 and Gate 2 both pass: this merge deploys prod.
+{{else}}
+The PR body carries one line per milestone issue, from its runbook Close field: `Closes #NNN` for "Closes at merge",
+`Refs #NNN` for every other issue. GitHub closes only the `Closes` issues, when the PR merges into the default branch.
+You close the `Refs` issues after their gates.
 {{/if}}
 
 ```bash
-gh pr create --base {{branches.main}} --head <queue branch> --title "promote(<version>): <queue branch> -> {{branches.main}}" --body "Closes #NNN"
+gh pr create --base {{branches.main}} --head <queue branch> --title "promote(<version>): <queue branch> -> {{branches.main}}" --body "{{#if (eq release.topology "main")}}Closes #NNN{{else}}Refs #NNN{{/if}}"
 gh pr checks <pr> --watch --interval 60
 gh pr merge <pr> {{release.pr_merge_args}}
 ```
 {{else}}
-**Promote** with a merge commit whose message carries one `Closes #NNN` line per milestone issue. GitHub closes those
-issues when the commit reaches the default branch.{{#if (eq release.topology "main")}} Run this only after Gate 1 and
-Gate 2 both pass: this push deploys prod.{{/if}}
+**Promote** with a merge commit.
+{{#if (eq release.topology "main")}}
+Its message carries one `Closes #NNN` line per milestone issue. GitHub closes those issues when the commit reaches the
+default branch. Run this only after Gate 1 and Gate 2 both pass: this push deploys prod.
+{{else}}
+Its message carries one line per milestone issue, from its runbook Close field: `Closes #NNN` for "Closes at merge",
+`Refs #NNN` for every other issue. GitHub closes only the `Closes` issues, when the commit reaches the default branch.
+You close the `Refs` issues after their gates.
+{{/if}}
 
 ```bash
 git switch {{branches.main}} && git pull --ff-only
-git merge --no-ff origin/<queue branch> -m "promote(<version>): <queue branch> -> {{branches.main}}" -m "Closes #NNN"
+git merge --no-ff origin/<queue branch> -m "promote(<version>): <queue branch> -> {{branches.main}}" -m "{{#if (eq release.topology "main")}}Closes #NNN{{else}}Refs #NNN{{/if}}"
 git push origin {{branches.main}}
 ```
 {{/if}}
+
+**Every other PR or commit you land on `{{branches.main}}` follows the same rule**, for example a release-record PR.
+Write `Refs #NNN`. Write `Closes #NNN` only for an issue whose fix takes effect at that merge.
 {{#if (eq release.topology "diverged-branch")}}
 
 **Cut over** after Gate 2. **REHEARSE EVERY CUTOVER BEFORE PUSHING IT.** Merge `{{branches.main}}` onto a throwaway
@@ -304,6 +363,17 @@ observable moment.
 Append the **{{release.record_name}}** to the runbook: what was applied, when, in what order, what was verified,
 and anything that surprised you. That record is the only durable memory of what actually happened. Future sessions
 read it and believe it, so it must be honest about what was skipped or improvised.
+
+**Then close the remaining issues.** Each open milestone issue whose fix shipped in this release, and whose Gate 2 and
+prod checks passed, is yours to close now.{{#unless (eq release.topology "main")}} These are the `Refs` issues, and any
+issue you re-opened after a STEP 1 hit.{{/unless}} Close each one with a comment that names the release:
+
+```bash
+gh issue list --milestone "<the milestone>" --state open
+gh issue close <n> --comment "In prod since <version> (<sha>). Gate 2 and the prod checks passed. Record: <runbook path>."
+```
+
+An issue whose fix did not ship, or whose check failed, stays open. That is a defect (see "When something fails").
 
 **Then close the milestone.** Once it is in prod and its issue list is empty, closing it is yours. It does not go
 back to Discovery.
